@@ -1,5 +1,19 @@
 import streamlit as st
 import google.generativeai as genai
+import os
+from PIL import Image
+
+# Use os.getenv to keep your key hidden
+api_key = os.getenv("AIzaSyAiA6nCSel3mpNkpolAfA4WTG2tYbYF1RA")
+
+if not api_key:
+    st.error("API Key not found! Please set GEMINI_API_KEY in Environment Variables.")
+    st.stop()
+
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel('gemini-2.5-flash')
+import streamlit as st
+import google.generativeai as genai
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
 import io
@@ -7,13 +21,7 @@ import os
 import os
 import google.generativeai as genai
 
-# This looks for the key in Render's environment variables
-api_key = os.getenv("AIzaSyDIUEQhbsjKj9el4EGUD5TcTKCRWxkXb5M")
-genai.configure(api_key=api_key)
-# --- CONFIGURATION ---
-# Replace with your actual API Key or set as an environment variable
-genai.configure(api_key="AIzaSyDIUEQhbsjKj9el4EGUD5TcTKCRWxkXb5M")
-model = genai.GenerativeModel('gemini-2.5-flash')
+
 
 def get_ai_caption(image):
     """Uses AI to analyze the image and return a funny meme caption."""
