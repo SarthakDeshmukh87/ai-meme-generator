@@ -8,7 +8,7 @@ import os
 import google.generativeai as genai
 
 # This looks for the key in Render's environment variables
-api_key = os.getenv("GEMINI_API_KEY")
+api_key = os.getenv("AIzaSyDIUEQhbsjKj9el4EGUD5TcTKCRWxkXb5M")
 genai.configure(api_key=api_key)
 # --- CONFIGURATION ---
 # Replace with your actual API Key or set as an environment variable
