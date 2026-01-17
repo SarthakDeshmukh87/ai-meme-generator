@@ -4,7 +4,12 @@ from PIL import Image, ImageDraw, ImageFont
 import textwrap
 import io
 import os
+import os
+import google.generativeai as genai
 
+# This looks for the key in Render's environment variables
+api_key = os.getenv("GEMINI_API_KEY")
+genai.configure(api_key=api_key)
 # --- CONFIGURATION ---
 # Replace with your actual API Key or set as an environment variable
 genai.configure(api_key="AIzaSyDIUEQhbsjKj9el4EGUD5TcTKCRWxkXb5M")
