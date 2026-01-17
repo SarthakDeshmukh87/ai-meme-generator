@@ -4,7 +4,8 @@ import os
 from PIL import Image
 
 # Use os.getenv to keep your key hidden
-api_key = os.getenv("AIzaSyAiA6nCSel3mpNkpolAfA4WTG2tYbYF1RA")
+# Tell Python to look for the BOX named GEMINI_API_KEY
+api_key = os.getenv("AIzaSyDug-PZKFpwlF8VyXrKGv3VXMUI5uPZzrk")
 
 if not api_key:
     st.error("API Key not found! Please set GEMINI_API_KEY in Environment Variables.")
