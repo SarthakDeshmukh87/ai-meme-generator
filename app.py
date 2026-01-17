@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 # 1. Setup API Key Securely
 # It looks for "GEMINI_API_KEY" in Render's Environment Variables
-api_key = os.getenv("AIzaSyCtbVMUzhPD47eDMjrfRvKOXJvZ3aBN5Ao")
+api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
     st.error("🚨 API Key not found! Go to Render Settings -> Environment and add GEMINI_API_KEY.")
