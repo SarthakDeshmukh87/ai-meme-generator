@@ -1,100 +1,87 @@
 import streamlit as st
 import google.generativeai as genai
 import os
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
-# Use os.getenv to keep your key hidden
-# Tell Python to look for the BOX named GEMINI_API_KEY
-api_key = os.getenv("AIzaSyDug-PZKFpwlF8VyXrKGv3VXMUI5uPZzrk")
+# 1. Setup API Key Securely
+# It looks for "GEMINI_API_KEY" in Render's Environment Variables
+api_key = os.getenv("AIzaSyDZtii1NWe8dqlzMyKRi3a1x1YJQf2aqB4")
 
 if not api_key:
-    st.error("API Key not found! Please set GEMINI_API_KEY in Environment Variables.")
+    st.error("🚨 API Key not found! Go to Render Settings -> Environment and add GEMINI_API_KEY.")
     st.stop()
 
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel('gemini-2.5-flash')
-import streamlit as st
-import google.generativeai as genai
-from PIL import Image, ImageDraw, ImageFont
-import textwrap
-import io
-import os
-import os
-import google.generativeai as genai
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-
-
+# 2. Function to Get AI Captions
 def get_ai_caption(image):
-    """Uses AI to analyze the image and return a funny meme caption."""
     prompt = """
     Analyze this image and create a funny meme caption. 
-    Return the result in exactly this format:
-    TOP: [Top text]
-    BOTTOM: [Bottom text]
-    Keep it short, witty, and relevant to the objects or expressions in the image.
+    Return ONLY two lines of text:
+    Line 1: Top caption
+    Line 2: Bottom caption
+    Keep it short and witty.
     """
-    response = model.generate_content([prompt, image])
-    text = response.text
-    
-    # Simple parsing logic
     try:
-        top = text.split("TOP:")[1].split("BOTTOM:")[0].strip()
-        bottom = text.split("BOTTOM:")[1].strip()
+        response = model.generate_content([prompt, image])
+        lines = response.text.strip().split('\n')
+        top = lines[0].replace('"', '').upper()
+        bottom = lines[1].replace('"', '').upper() if len(lines) > 1 else ""
         return top, bottom
-    except:
-        return "WHEN THE AI WORKS", "BUT THE PARSING FAILS"
+    except Exception as e:
+        return "ERROR", str(e)
 
+# 3. Function to Draw Meme Text
 def make_meme(img, top_text, bottom_text):
-    img = img.convert("RGB")
     draw = ImageDraw.Draw(img)
-    w, h = img.size
-    font_size = int(h * 0.08)
+    width, height = img.size
     
-    # Try to find Impact font, else default
+    # Font Logic: Try Impact, fallback to default if missing on Linux/Render
+    font_size = int(height / 10)
     try:
         font = ImageFont.truetype("Impact.ttf", font_size)
     except:
         font = ImageFont.load_default()
 
-    def draw_text(text, y_pos):
-        lines = textwrap.wrap(text.upper(), width=w//(font_size//2))
-        for line in lines:
-            line_w = draw.textlength(line, font=font)
-            x = (w - line_w) / 2
-            # Outline for readability
-            for adj in range(-2, 3):
-                draw.text((x+adj, y_pos), line, font=font, fill="black")
-                draw.text((x, y_pos+adj), line, font=font, fill="black")
-            draw.text((x, y_pos), line, font=font, fill="white")
-            y_pos += font_size
+    def draw_text_with_outline(text, pos_y):
+        # Center the text
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        x = (width - text_width) / 2
+        
+        # Draw black outline (shadow)
+        for adj in range(-3, 4):
+            draw.text((x+adj, pos_y), text, font=font, fill="black")
+            draw.text((x, pos_y+adj), text, font=font, fill="black")
+        
+        # Draw white text
+        draw.text((x, pos_y), text, font=font, fill="white")
 
-    draw_text(top_text, 20)
-    draw_text(bottom_text, h - (font_size * 2) - 20)
+    draw_text_with_outline(top_text, 10)
+    draw_text_with_outline(bottom_text, height - font_size - 20)
+    
     return img
 
-# --- STREAMLIT UI ---
-st.set_page_config(page_title="AI Meme Genius")
+# 4. Streamlit UI
+st.set_page_config(page_title="AI Meme Generator", page_icon="🤖")
 st.title("🤖 AI Meme Generator")
+st.write("Upload a photo and let Gemini write the joke!")
 
-uploaded_file = st.file_uploader("Upload an image...", type=["jpg", "png", "jpeg"])
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
-if uploaded_file:
+if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    st.image(image, caption="Uploaded Image", use_container_width=True)
+    st.image(image, caption="Original Image", use_container_width=True)
     
-    if st.button("✨ Generate AI Caption"):
-        with st.spinner("AI is thinking of a joke..."):
+    if st.button("Generate Meme"):
+        with st.spinner("Gemini is thinking..."):
             top, bottom = get_ai_caption(image)
+            meme_img = make_meme(image.copy(), top, bottom)
             
-            # Create the meme
-            result_img = make_meme(image, top, bottom)
-            
-            st.subheader("Resulting Meme:")
-            st.image(result_img, use_container_width=True)
+            st.image(meme_img, caption="Your AI Meme", use_container_width=True)
             
             # Download Button
-            buf = io.BytesIO()
-            result_img.save(buf, format="PNG")
-            st.download_button("Download Meme", buf.getvalue(), "ai_meme.png")
-
-            st.write(f"**AI suggested:** {top} | {bottom}")
+            meme_img.save("meme.png")
+            with open("meme.png", "rb") as file:
+                st.download_button("Download Meme", file, "my_ai_meme.png", "image/png")
