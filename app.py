@@ -3,91 +3,68 @@ import google.generativeai as genai
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-# 1. API Configuration
+# 1. Secure API Loading
 api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
-    st.error("🚨 GEMINI_API_KEY not found! Set it in Render's Environment Variables.")
+    st.error("🚨 CONFIG ERROR: The 'GEMINI_API_KEY' variable is not set in Render Settings.")
     st.stop()
 
 genai.configure(api_key=api_key)
+# Using flash for faster multimodal processing
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# 2. AI Caption Logic
+# 2. Function to Get AI Captions
 def get_ai_caption(image):
-    prompt = """
-    Analyze this image and create a funny meme caption. 
-    Return ONLY two lines of text:
-    Line 1: Top caption
-    Line 2: Bottom caption
-    Keep it short and witty.
-    """
+    prompt = "Create a short 2-line meme caption for this image. Line 1: Top, Line 2: Bottom. Uppercase only."
     try:
         response = model.generate_content([prompt, image])
+        # Troubleshooting: Ensure response actually has text
+        if not response.text:
+            return "AI ERROR", "NO CAPTION GENERATED"
         lines = response.text.strip().split('\n')
-        # Clean text and convert to uppercase for classic meme look
-        top = lines[0].replace('"', '').upper()
-        bottom = lines[1].replace('"', '').upper() if len(lines) > 1 else ""
+        top = lines[0].replace('"', '')
+        bottom = lines[1].replace('"', '') if len(lines) > 1 else ""
         return top, bottom
     except Exception as e:
-        return "AI ERROR", "COULD NOT GENERATE CAPTION"
+        return "ERROR", str(e)
 
-# 3. Enhanced Image Processing (Bigger Text + Outline)
+# 3. Meme Creation Logic
 def make_meme(img, top_text, bottom_text):
     draw = ImageDraw.Draw(img)
     width, height = img.size
-    
-    # FONT SIZE INCREASED: Now 1/7th of image height (was 1/10th)
-    # This makes the captions much more prominent.
-    font_size = int(height / 7) 
+    font_size = int(height / 7) # Increased size for better readability
     
     try:
-        # If you have Impact.ttf in your repo, it uses that
         font = ImageFont.truetype("Impact.ttf", font_size)
     except:
-        # Fallback for Render/Linux server environments
+        # Fallback for Render's Linux environment
         font = ImageFont.load_default(size=font_size)
 
-    def draw_text_with_outline(text, pos_y):
-        # Calculate centering
-        bbox = draw.textbbox((0, 0), text, font=font)
-        text_width = bbox[2] - bbox[0]
-        x = (width - text_width) / 2
-        
-        # Stroke width scales with font size for better readability
-        thickness = max(2, int(font_size / 15))
-        
-        # Draw text with built-in stroke (Pillow 10.0+ feature)
-        draw.text((x, pos_y), text, font=font, fill="white", 
-                  stroke_width=thickness, stroke_fill="black")
+    def draw_text(text, y_pos):
+        bbox = draw.textbbox((0, 0), text, font=font) # Modern Pillow text measurement
+        x = (width - (bbox[2] - bbox[0])) / 2
+        # Draw with black outline for visibility
+        draw.text((x, y_pos), text, font=font, fill="white", stroke_width=3, stroke_fill="black")
 
-    # Draw Top and Bottom Captions
-    draw_text_with_outline(top_text, 20)
-    draw_text_with_outline(bottom_text, height - font_size - 40)
-    
+    draw_text(top_text, 10)
+    draw_text(bottom_text, height - font_size - 20)
     return img
 
-# 4. Streamlit UI (2026 Standards)
-st.set_page_config(page_title="AI Meme Generator", page_icon="🖼️")
-st.title("🖼️ AI Meme Generator")
+# 4. Streamlit UI (2026 Updated Syntax)
+st.title("🤖 AI Meme Generator")
+uploaded_file = st.file_uploader("Upload Image", type=["jpg", "png"])
 
-uploaded_file = st.file_uploader("Upload an image...", type=["jpg", "jpeg", "png"])
-
-if uploaded_file is not None:
+if uploaded_file:
     image = Image.open(uploaded_file)
-    # Using width="stretch" to replace the deprecated use_container_width
-    st.image(image, caption="Original Image", width="stretch")
+    # Use width='stretch' to fix the Render log error
+    st.image(image, caption="Uploaded", width='stretch')
     
     if st.button("Generate Meme"):
-        with st.spinner("🤖  Thinking of a joke..."):
+        with st.spinner("AI is working..."):
             top, bottom = get_ai_caption(image)
-            
-            # Create the meme using a copy of the image
-            meme_result = make_meme(image.copy(), top, bottom)
-            
-            st.image(meme_result, caption="Generated Meme", width="stretch")
-            
-            # Save and Download
-            meme_result.save("meme.png")
-            with open("meme.png", "rb") as file:
-                st.download_button("📥 Download Meme", file, "my_meme.png", "image/png")
+            if top == "ERROR":
+                st.error(f"API Error: {bottom}")
+            else:
+                meme = make_meme(image.copy(), top, bottom)
+                st.image(meme, caption="Final Meme", width='stretch')
