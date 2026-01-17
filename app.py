@@ -66,7 +66,7 @@ def make_meme(img, top_text, bottom_text):
             x = (width - line_w) / 2
             
             # Thick black stroke for high contrast
-            stroke = max(2, int(font_size / 12))
+            stroke = max(2, int(font_size / 10))
             draw.text((x, current_y), line, font=font, fill="white", 
                       stroke_width=stroke, stroke_fill="black")
             current_y += line_height
