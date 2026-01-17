@@ -5,14 +5,14 @@ from PIL import Image, ImageDraw, ImageFont
 
 # 1. Setup API Key Securely
 # It looks for "GEMINI_API_KEY" in Render's Environment Variables
-api_key = os.getenv("AIzaSyDZtii1NWe8dqlzMyKRi3a1x1YJQf2aqB4")
+api_key = os.getenv("AIzaSyCtbVMUzhPD47eDMjrfRvKOXJvZ3aBN5Ao")
 
 if not api_key:
     st.error("🚨 API Key not found! Go to Render Settings -> Environment and add GEMINI_API_KEY.")
     st.stop()
 
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 # 2. Function to Get AI Captions
 def get_ai_caption(image):
