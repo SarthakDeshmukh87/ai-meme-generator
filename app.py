@@ -13,7 +13,7 @@ if not api_key:
     st.stop()
 
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 # 2. Advanced AI Caption Logic with Styles
 def get_ai_caption(image, style_choice):
